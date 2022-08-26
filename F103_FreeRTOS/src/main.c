@@ -30,6 +30,10 @@ SOFTWARE.
 /* Includes */
 #include <stddef.h>
 #include "stm32f10x.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+#include "timers.h"
 
 #ifdef USE_STM3210B_EVAL
  #include "stm3210b_eval.h"
@@ -110,6 +114,8 @@ SOFTWARE.
 /* Private function prototypes */
 /* Private functions */
 
+void vTask1(void *pvParameters);
+
 /**
 **===========================================================================
 **
@@ -119,112 +125,23 @@ SOFTWARE.
 */
 int main(void)
 {
-  int i = 0;
-
-  /**
-  *  IMPORTANT NOTE!
-  *  The symbol VECT_TAB_SRAM needs to be defined when building the project
-  *  if code has been located to RAM and interrupts are used. 
-  *  Otherwise the interrupt table located in flash will be used.
-  *  See also the <system_*.c> file and how the SystemInit() function updates 
-  *  SCB->VTOR register.  
-  *  E.g.  SCB->VTOR = 0x20000000;  
-  */
-
-#ifdef USE_LED
-  /* Initialize LEDs */
-  STM_EVAL_LEDInit(LED1);
-  STM_EVAL_LEDInit(LED2);
-  STM_EVAL_LEDInit(LED3);
-  STM_EVAL_LEDInit(LED4);
-
-  /* Turn on LEDs */
-  STM_EVAL_LEDOn(LED1);
-  STM_EVAL_LEDOn(LED2);
-  STM_EVAL_LEDOn(LED3);
-  STM_EVAL_LEDOn(LED4);
-
-#elif defined USE_STM32_DISCOVERY
-  STM32vldiscovery_LEDInit(LED3);
-  STM32vldiscovery_LEDInit(LED4);
-  STM32vldiscovery_PBInit(BUTTON_USER, BUTTON_MODE_GPIO);
-  STM32vldiscovery_LEDOff(LED3);
-  STM32vldiscovery_LEDOff(LED4);
-#endif
-
-#ifdef USE_BOARD
-  /* Initialize the LCD */
-#ifdef USE_STM3210B_EVAL
-  STM3210B_LCD_Init();
-#elif defined USE_STM3210E_EVAL
-  STM3210E_LCD_Init();
-#elif defined USE_STM3210C_EVAL
-  STM3210C_LCD_Init();
-#elif defined USE_STM32100B_EVAL
-  STM32100B_LCD_Init();
-#endif
-
-  /* Display message on STM3210X-EVAL LCD */
-  /* Clear the LCD */
-  LCD_Clear(White);
-
-  /* Set the LCD Back Color */
-  LCD_SetBackColor(Blue);
-  /* Set the LCD Text Color */
-  LCD_SetTextColor(White);
-  LCD_DisplayStringLine(Line0, (uint8_t *)MESSAGE1);
-  LCD_DisplayStringLine(Line1, (uint8_t *)MESSAGE2);
-  LCD_DisplayStringLine(Line2, (uint8_t *)MESSAGE3);
-  LCD_DisplayStringLine(Line3, (uint8_t *)MESSAGE4);
-  LCD_DisplayStringLine(Line4, (uint8_t *)MESSAGE5);
-  LCD_DisplayStringLine(Line5, (uint8_t *)MESSAGE6);
-
-  /* USARTx configured as follow:
-        - BaudRate = 115200 baud
-        - Word Length = 8 Bits
-        - One Stop Bit
-        - No parity
-        - Hardware flow control disabled (RTS and CTS signals)
-        - Receive and transmit enabled
-  */
-  USART_InitStructure.USART_BaudRate = 115200;
-  USART_InitStructure.USART_WordLength = USART_WordLength_8b;
-  USART_InitStructure.USART_StopBits = USART_StopBits_1;
-  USART_InitStructure.USART_Parity = USART_Parity_No;
-  USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-  USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
-
-  STM_EVAL_COMInit(COM1, &USART_InitStructure);
-#endif
-
-  /* TODO - Add your application code here */
-
-  /* Infinite loop */
-  while (1)
-  {
-	i++;
-#ifdef USE_LED
-	STM_EVAL_LEDToggle(LED1);
-
-#elif defined USE_STM32_DISCOVERY
-    if(0 == STM32vldiscovery_PBGetState(BUTTON_USER))
-    {
-      /* Toggle LED3 */
-      STM32vldiscovery_LEDToggle(LED3);
-      /* Turn Off LED4 */
-      STM32vldiscovery_LEDOff(LED4);
-    }
-    else
-    {
-      /* Toggle LED4 */
-        STM32vldiscovery_LEDToggle(LED4);
-      /* Turn Off LED3 */
-      STM32vldiscovery_LEDOff(LED3);
-    }
-#endif
-  }
+  xTaskCreate(vTask1, "Task1", 1000, NULL, 0, NULL);
 }
 
+
+void vTask1(void *pvParameters)
+{
+  uint8_t cnt = 0;
+
+  if(cnt == 10)
+  {
+    cnt = 0;
+  }
+  else
+  {
+    cnt = cnt + 1;
+  }
+}
 #ifdef  USE_FULL_ASSERT
 
 /**
